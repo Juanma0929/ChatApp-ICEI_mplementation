@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp - ZeroC Ice</title>
+    <!-- Cargar Ice ANTES de webpack bundle -->
+    <script src="Ice.js"></script>
+    <!-- Cargar el código generado DESPUÉS de Ice -->
+    <script src="chat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Modal de Registro/Login -->
+        <div id="register-modal" class="modal">
+            <div class="modal-content">
+                <h2>Bienvenido a ChatApp</h2>
+                <p>Registra tu nombre para comenzar</p>
+                <form id="register-form">
+                    <input 
+                        type="text" 
+                        id="username-input" 
+                        placeholder="Ingresa tu nombre..." 
+                        required 
+                        autocomplete="off"
+                        minlength="3"
+                        maxlength="30"
+                    />
+                    <button type="submit" class="primary-button">Registrar</button>
+                </form>
+                <div id="register-error" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Header de la aplicación -->
+        <div class="app-header">
+            <div class="app-logo">💬 ChatApp</div>
+            <div class="app-user">
+                <span id="current-user-name">Usuario</span>
+            </div>
+        </div>
+
+        <!-- Contenedor principal -->
+        <div class="app-container">
+            <!-- Panel izquierdo: Lista de chats -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Chats</h2>
+                    <div class="sidebar-actions">
+                        <button id="new-chat-button" class="icon-button" title="Nuevo chat">💬</button>
+                        <button id="new-group-button" class="icon-button" title="Nuevo grupo">👥</button>
+                    </div>
+                </div>
+                <div id="chat-list" class="chat-list">
+                    <!-- Los chats se renderizan aquí -->
+                </div>
+            </div>
+
+            <!-- Panel derecho: Conversación activa -->
+            <div class="main-content">
+                <!-- Header del chat activo -->
+                <div class="chat-header">
+                    <h3 id="chat-header">Selecciona un chat</h3>
+                </div>
+
+                <!-- Lista de mensajes -->
+                <div id="message-list" class="message-list">
+                    <!-- Los mensajes se renderizan aquí -->
+                </div>
+
+                <!-- Input de mensaje -->
+                <div class="message-input-container">
+                    <input 
+                        type="text" 
+                        id="message-input" 
+                        placeholder="Escribe un mensaje..." 
+                        autocomplete="off"
+                    />
+                    <button id="send-button" class="send-button">Enviar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Conectando con el servidor...</p>
+        </div>
+
+        <!-- Modal de búsqueda de contactos -->
+        <div id="search-modal" class="search-modal">
+            <div class="search-modal-content">
+                <div class="search-modal-header">
+                    <h3>Buscar Contacto</h3>
+                    <button id="close-search-button" class="close-button">×</button>
+                </div>
+                <div class="search-input-container">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Buscar por nombre..." 
+                        autocomplete="off"
+                    />
+                    <button id="search-button" class="search-button">Buscar</button>
+                </div>
+                <div id="search-result" class="search-result empty">
+                    Ingresa un nombre para buscar
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de crear grupo -->
+        <div id="group-modal" class="search-modal">
+            <div class="search-modal-content">
+                <div class="search-modal-header">
+                    <h3>Crear Grupo</h3>
+                    <button id="close-group-button" class="close-button">×</button>
+                </div>
+                <form id="group-form">
+                    <input 
+                        type="text" 
+                        id="group-name-input" 
+                        placeholder="Nombre del grupo..." 
+                        required
+                        autocomplete="off"
+                        style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #2a3942; border-radius: 8px; background-color: #2a3942; color: #e9edef; font-size: 14px;"
+                    />
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #e9edef; margin-bottom: 10px;">Buscar miembros:</h4>
+                        <div class="search-input-container">
+                            <input 
+                                type="text" 
+                                id="group-search-input" 
+                                placeholder="Buscar usuario..." 
+                                autocomplete="off"
+                            />
+                            <button type="button" id="group-search-button" class="search-button">Buscar</button>
+                        </div>
+                    </div>
+                    <div id="group-search-result" class="search-result empty">
+                        Busca usuarios para agregar al grupo
+                    </div>
+                    <div id="selected-members" style="margin-top: 15px; padding: 10px; background-color: #2a3942; border-radius: 8px; min-height: 50px;">
+                        <h4 style="color: #8696a0; font-size: 12px; margin-bottom: 5px;">Miembros seleccionados:</h4>
+                        <div id="members-list" style="color: #e9edef;">Ninguno</div>
+                    </div>
+                    <button type="submit" class="primary-button" style="width: 100%; margin-top: 15px;">
+                        Crear Grupo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

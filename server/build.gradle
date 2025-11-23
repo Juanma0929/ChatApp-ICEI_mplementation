@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.compunet.chatapp'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+dependencies {
+    // ZeroC Ice para Java
+    implementation 'com.zeroc:ice:3.7.10'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    implementation 'org.slf4j:slf4j-simple:1.7.36'
+}
+
+application {
+    mainClass = 'com.compunet.chatapp.ServerMain'
+}
+
+// Directorios
+def sliceDir = "$projectDir/src/main/slice"
+def generatedDir = "$buildDir/generated/source/ice/main/java"
+
+// Crear directorio generado si no existe
+def generatedDirFile = file(generatedDir)
+if (!generatedDirFile.exists()) {
+    generatedDirFile.mkdirs()
+}
+
+// Tarea para generar código Java desde archivos .ice
+task compileSlice(type: Exec) {
+    description = 'Compiles Slice definitions to Java'
+    
+    inputs.dir sliceDir
+    outputs.dir generatedDir
+    
+    commandLine 'slice2java', '--output-dir', generatedDir, "${sliceDir}/chat.ice"
+}
+
+// Asegurar que compileSlice se ejecute antes de compilar Java
+compileJava.dependsOn compileSlice
+
+// Agregar el directorio generado al source set
+sourceSets {
+    main {
+        java {
+            srcDirs += generatedDir
+        }
+    }
+}
