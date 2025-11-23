@@ -10,6 +10,9 @@
     <script src="chat.js"></script>
 </head>
 <body>
+    <!-- Elemento de audio para el stream remoto -->
+    <audio id="remoteAudio" autoplay></audio>
+    
     <div id="app">
         <!-- Modal de Registro/Login -->
         <div id="register-modal" class="modal">
@@ -70,6 +73,7 @@
 
                 <!-- Input de mensaje -->
                 <div class="message-input-container">
+                    <button id="record-button" class="record-button" title="Grabar audio">🎤</button>
                     <input 
                         type="text" 
                         id="message-input" 

@@ -68,6 +68,16 @@ public class ChatServiceI implements ChatService {
     }
     
     @Override
+    public void sendDirectAudio(String fromUserId, String toUserId, String audioBase64, int duration, Current current) {
+        try {
+            chatCore.sendDirectAudio(fromUserId, toUserId, audioBase64, duration);
+        } catch (Exception e) {
+            System.err.println("Error enviando audio directo: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
     public ChatSummary[] getUserDirectChats(String userId, Current current) {
         try {
             List<ChatSummary> chats = chatCore.getUserDirectChats(userId);
@@ -97,6 +107,101 @@ public class ChatServiceI implements ChatService {
         } catch (Exception e) {
             System.err.println("Error obteniendo usuarios: " + e.getMessage());
             return new User[0];
+        }
+    }
+    
+    // ========== Métodos de llamadas de voz directas ==========
+    
+    @Override
+    public String startDirectCall(String callerId, String recipientId, Current current) {
+        try {
+            return chatCore.startDirectCall(callerId, recipientId);
+        } catch (Exception e) {
+            System.err.println("Error iniciando llamada: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
+    public void answerDirectCall(String callId, String userId, Current current) {
+        try {
+            chatCore.answerDirectCall(callId, userId);
+        } catch (Exception e) {
+            System.err.println("Error contestando llamada: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
+    public void rejectDirectCall(String callId, String userId, Current current) {
+        try {
+            chatCore.rejectDirectCall(callId, userId);
+        } catch (Exception e) {
+            System.err.println("Error rechazando llamada: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
+    public void endDirectCall(String callId, String userId, Current current) {
+        try {
+            chatCore.endDirectCall(callId, userId);
+        } catch (Exception e) {
+            System.err.println("Error terminando llamada: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
+    public VoiceCall getCallStatus(String callId, Current current) {
+        try {
+            return chatCore.getCallStatus(callId);
+        } catch (Exception e) {
+            System.err.println("Error obteniendo estado de llamada: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    @Override
+    public VoiceCall[] getActiveCallsForUser(String userId, Current current) {
+        try {
+            List<VoiceCall> calls = chatCore.getActiveCallsForUser(userId);
+            return calls.toArray(new VoiceCall[0]);
+        } catch (Exception e) {
+            System.err.println("Error obteniendo llamadas activas: " + e.getMessage());
+            return new VoiceCall[0];
+        }
+    }
+    
+    // ========== Métodos de señalización WebRTC ==========
+    
+    @Override
+    public void sendWebRTCSignal(String callId, String fromUserId, String toUserId, String type, String data, Current current) {
+        try {
+            chatCore.sendWebRTCSignal(callId, fromUserId, toUserId, type, data);
+        } catch (Exception e) {
+            System.err.println("Error enviando señal WebRTC: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    @Override
+    public WebRTCSignal[] getWebRTCSignals(String userId, Current current) {
+        try {
+            List<WebRTCSignal> signals = chatCore.getWebRTCSignals(userId);
+            return signals.toArray(new WebRTCSignal[0]);
+        } catch (Exception e) {
+            System.err.println("Error obteniendo señales WebRTC: " + e.getMessage());
+            return new WebRTCSignal[0];
+        }
+    }
+    
+    @Override
+    public void acknowledgeWebRTCSignal(String callId, String userId, int signalIndex, Current current) {
+        try {
+            chatCore.acknowledgeWebRTCSignal(callId, userId, signalIndex);
+        } catch (Exception e) {
+            System.err.println("Error confirmando señal WebRTC: " + e.getMessage());
         }
     }
 }

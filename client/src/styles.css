@@ -252,6 +252,58 @@ body {
     text-align: right;
 }
 
+/* Mensaje de audio */
+.audio-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    min-width: 200px;
+}
+
+.audio-play-button {
+    background-color: #00a884;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+    transition: background-color 0.2s;
+}
+
+.audio-play-button:hover {
+    background-color: #008f6f;
+}
+
+.audio-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.audio-waveform {
+    height: 20px;
+    background: repeating-linear-gradient(
+        to right,
+        #8696a0 0px,
+        #8696a0 2px,
+        transparent 2px,
+        transparent 6px
+    );
+    border-radius: 4px;
+}
+
+.audio-duration {
+    font-size: 12px;
+    color: #8696a0;
+}
+
 /* Input de mensaje */
 .message-input-container {
     padding: 15px 20px;
@@ -259,6 +311,40 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+.record-button {
+    padding: 12px;
+    background-color: #2a3942;
+    color: #e9edef;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.record-button:hover {
+    background-color: #374045;
+}
+
+.record-button.recording {
+    background-color: #ff4444;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 #message-input {
@@ -587,4 +673,188 @@ body {
     background-color: #2a3942;
     color: #8696a0;
     cursor: not-allowed;
+}
+
+/* ===== Estilos para llamadas de voz ===== */
+
+.call-button {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    transition: transform 0.2s;
+}
+
+.call-button:hover {
+    transform: scale(1.1);
+}
+
+.call-modal {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.call-modal-content {
+    background: #202c33;
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    min-width: 320px;
+}
+
+.call-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.call-modal-content h2 {
+    color: #e9edef;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.call-modal-content p {
+    color: #8696a0;
+    margin-bottom: 30px;
+    font-size: 16px;
+}
+
+.end-call-button {
+    padding: 15px 40px;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.end-call-button:hover {
+    background-color: #cc0000;
+}
+
+.incoming-call-notification {
+    display: flex;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #202c33;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.incoming-call-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.incoming-call-content h3 {
+    color: #e9edef;
+    margin-bottom: 5px;
+    font-size: 18px;
+}
+
+.incoming-call-content p {
+    color: #8696a0;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.incoming-call-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.answer-button {
+    padding: 12px 24px;
+    background-color: #00a884;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.answer-button:hover {
+    background-color: #008f6f;
+}
+
+.reject-button {
+    padding: 12px 24px;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.reject-button:hover {
+    background-color: #cc0000;
+}
+
+#group-call-participants {
+    color: #00a884;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100px);
+        opacity: 0;
+    }
 }

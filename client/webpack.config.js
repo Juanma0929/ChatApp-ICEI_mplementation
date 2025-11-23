@@ -37,14 +37,24 @@ module.exports = {
         {
           from: 'src/generated/chat.js',
           to: 'chat.js'
+        },
+        {
+          from: 'public/config',
+          to: 'config'
         }
       ]
     })
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist')
-    },
+    static: [
+      {
+        directory: path.join(__dirname, 'dist')
+      },
+      {
+        directory: path.join(__dirname, 'public'),
+        publicPath: '/'
+      }
+    ],
     compress: true,
     port: 8080,
     hot: true

@@ -11,14 +11,21 @@ module compunet {
         GROUP
     }
     
+    enum MessageType {
+        TEXT,
+        AUDIO
+    }
+    
     struct Message {
         string id;
         string senderId;
         string senderName;
         string recipientId; // userId para directo, groupId para grupo
-        string content;
+        string content; // texto o base64 del audio
         long timestamp;
         ChatType chatType;
+        MessageType messageType;
+        int audioDuration; // duración en segundos (solo para audio)
     }
     
     struct ChatSummary {
@@ -51,6 +58,9 @@ module compunet {
         // Enviar mensaje directo entre dos usuarios
         void sendDirectMessage(string fromUserId, string toUserId, string content);
         
+        // Enviar audio directo entre dos usuarios
+        void sendDirectAudio(string fromUserId, string toUserId, string audioBase64, int duration);
+        
         // Obtener lista de chats directos de un usuario
         ChatSummarySeq getUserDirectChats(string userId);
         
@@ -71,6 +81,9 @@ module compunet {
         
         // Enviar mensaje a un grupo
         void sendGroupMessage(string fromUserId, string groupId, string content);
+        
+        // Enviar audio a un grupo
+        void sendGroupAudio(string fromUserId, string groupId, string audioBase64, int duration);
         
         // Obtener lista de grupos de un usuario
         ChatSummarySeq getUserGroupChats(string userId);

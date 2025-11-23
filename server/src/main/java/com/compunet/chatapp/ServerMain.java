@@ -18,8 +18,24 @@ public class ServerMain {
         Communicator communicator = null;
         
         try {
+            // Cargar configuración desde archivo
+            com.zeroc.Ice.InitializationData initData = new com.zeroc.Ice.InitializationData();
+            initData.properties = Util.createProperties();
+            
+            // Intentar cargar el archivo de configuración
+            String configPath = "config/application.config";
+            try {
+                initData.properties.load(configPath);
+                System.out.println("✓ Configuración cargada desde: " + configPath);
+            } catch (Exception e) {
+                System.out.println("⚠ No se pudo cargar " + configPath + ", usando valores por defecto");
+            }
+            
+            // Sobrescribir con argumentos de línea de comandos si existen
+            initData.properties.parseCommandLineOptions("", args);
+            
             // Inicializar Ice con configuración
-            communicator = Util.initialize(args);
+            communicator = Util.initialize(initData);
             
             // Crear el ChatCore compartido
             ChatCore chatCore = new ChatCore();
@@ -28,32 +44,37 @@ public class ServerMain {
             System.out.println("\nServidor iniciado sin datos de prueba.");
             System.out.println("Los usuarios se registrarán desde el cliente.\n");
             
-            // Crear el ObjectAdapter
-            ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints(
-                "ChatAdapter", 
-                "default -h localhost -p 10000:ws -h localhost -p 10001"
-            );
+            // Crear los ObjectAdapters desde configuración
+            ObjectAdapter adapter = communicator.createObjectAdapter("ChatAdapter");
+            ObjectAdapter wsAdapter = communicator.createObjectAdapter("ChatWebSocketAdapter");
             
             // Crear e instalar los servants
             ChatServiceI chatServant = new ChatServiceI(chatCore);
             GroupServiceI groupServant = new GroupServiceI(chatCore);
             
-            // Registrar servants con identidades
-            adapter.add(chatServant, Util.stringToIdentity("chat"));
-            adapter.add(groupServant, Util.stringToIdentity("group"));
+            // Registrar servants en ambos adapters (TCP y WebSocket)
+            adapter.add(chatServant, Util.stringToIdentity("chatService"));
+            adapter.add(groupServant, Util.stringToIdentity("groupService"));
+            wsAdapter.add(chatServant, Util.stringToIdentity("chatService"));
+            wsAdapter.add(groupServant, Util.stringToIdentity("groupService"));
             
-            // Activar el adapter
+            // Activar ambos adapters
             adapter.activate();
+            wsAdapter.activate();
+            
+            // Obtener endpoints desde configuración
+            String tcpEndpoints = initData.properties.getProperty("ChatAdapter.Endpoints");
+            String wsEndpoints = initData.properties.getProperty("ChatWebSocketAdapter.Endpoints");
             
             System.out.println("===========================================");
             System.out.println("Servidor de Chat iniciado correctamente");
             System.out.println("===========================================");
             System.out.println("Escuchando en:");
-            System.out.println("  - TCP: localhost:10000");
-            System.out.println("  - WebSocket: localhost:10001");
+            System.out.println("  - TCP: " + (tcpEndpoints != null ? tcpEndpoints : "localhost:10000"));
+            System.out.println("  - WebSocket: " + (wsEndpoints != null ? wsEndpoints : "localhost:10001"));
             System.out.println("Servicios disponibles:");
-            System.out.println("  - ChatService (identity: 'chat')");
-            System.out.println("  - GroupService (identity: 'group')");
+            System.out.println("  - ChatService (identity: 'chatService')");
+            System.out.println("  - GroupService (identity: 'groupService')");
             System.out.println("===========================================");
             System.out.println("Presiona Ctrl+C para detener el servidor");
             System.out.println("===========================================");

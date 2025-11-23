@@ -10,10 +10,14 @@ import { messageReceiver } from './MessageReceiver';
 import { uiController } from './ChatUIController';
 import { RegistrationManager } from './registrationManager';
 import { GroupManager } from './groupManager';
+import CallManager from './CallManager';
+import GroupCallManager from './GroupCallManager';
 
-// Variable global para el registration manager y group manager
+// Variable global para los managers
 let registrationManager;
 let groupManager;
+let callManager;
+let groupCallManager;
 let refreshInterval = null;
 
 /**
@@ -41,6 +45,11 @@ export async function startApp() {
             await messageReceiver.loadChatMessages(activeChat);
         }
         await messageReceiver.loadAllChats();
+        
+        // Verificar llamadas entrantes
+        if (window.callManager) {
+            await window.callManager.checkActiveCalls();
+        }
     }, 3000);
     
     console.log('Aplicación completamente iniciada');
@@ -67,7 +76,41 @@ async function initApp() {
         // 4. Inicializar el Group Manager
         groupManager = new GroupManager(iceClient, chatState);
         
-        // 5. Ocultar loading overlay y mostrar modal de registro
+        // 5. Inicializar Call Managers
+        callManager = new CallManager(iceClient, chatState);
+        groupCallManager = new GroupCallManager(iceClient, chatState);
+        
+        // Configurar callbacks de llamadas
+        callManager.onIncomingCall = (call) => {
+            uiController.showIncomingCallNotification(call, callManager);
+        };
+        
+        callManager.onCallAnswered = (callId) => {
+            uiController.updateCallStatus('Llamada en progreso...');
+        };
+        
+        callManager.onCallEnded = (callId) => {
+            uiController.hideCallModal();
+        };
+        
+        callManager.onCallRejected = (callId) => {
+            uiController.hideCallModal();
+            uiController.showNotification('Llamada rechazada');
+        };
+        
+        groupCallManager.onGroupCallStarted = (callId, groupId) => {
+            uiController.showGroupCallModal(callId, groupCallManager);
+        };
+        
+        groupCallManager.onGroupCallEnded = (callId) => {
+            uiController.hideGroupCallModal();
+        };
+        
+        // Hacer disponibles globalmente
+        window.callManager = callManager;
+        window.groupCallManager = groupCallManager;
+        
+        // 6. Ocultar loading overlay y mostrar modal de registro
         loadingOverlay.classList.add('hidden');
         registrationManager.showRegisterModal();
         

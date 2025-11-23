@@ -8,6 +8,9 @@ import { messageSender } from './MessageSender';
 import { messageReceiver } from './MessageReceiver';
 import { iceClient } from './IceConnectionManager';
 import { compunet } from './iceModules';
+import { audioRecorder } from './AudioRecorder';
+import { audioSender } from './AudioSender';
+import { audioReceiver } from './AudioReceiver';
 
 export class ChatUIController {
     constructor() {
@@ -27,6 +30,7 @@ export class ChatUIController {
             messageList: document.getElementById('message-list'),
             messageInput: document.getElementById('message-input'),
             sendButton: document.getElementById('send-button'),
+            recordButton: document.getElementById('record-button'),
             chatHeader: document.getElementById('chat-header'),
             newChatButton: document.getElementById('new-chat-button'),
             newGroupButton: document.getElementById('new-group-button'),
@@ -55,6 +59,9 @@ export class ChatUIController {
                 this.handleSendMessage();
             }
         });
+
+        // Grabar audio
+        this.elements.recordButton.addEventListener('click', () => this.handleRecordAudio());
 
         // Botón nuevo grupo
         this.elements.newGroupButton.addEventListener('click', () => this.handleNewGroup());
@@ -136,13 +143,57 @@ export class ChatUIController {
             
             const time = this.formatTime(msg.timestamp);
             
-            messageDiv.innerHTML = `
-                <div class="message-content">
-                    ${!isOwn ? `<div class="message-sender">${this.escapeHtml(msg.senderName)}</div>` : ''}
-                    <div class="message-text">${this.escapeHtml(msg.content)}</div>
-                    <div class="message-time">${time}</div>
-                </div>
-            `;
+            // Verificar si es mensaje de audio o texto
+            const isAudio = msg.messageType === compunet.MessageType.AUDIO;
+            
+            if (isAudio) {
+                // Renderizar mensaje de audio
+                const audioId = `audio-${msg.id}`;
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        ${!isOwn ? `<div class="message-sender">${this.escapeHtml(msg.senderName)}</div>` : ''}
+                        <div class="audio-message">
+                            <button class="audio-play-button" data-audio-id="${audioId}" data-audio-base64="${msg.content}">
+                                ▶️
+                            </button>
+                            <div class="audio-info">
+                                <div class="audio-waveform"></div>
+                                <div class="audio-duration">${audioReceiver.formatDuration(msg.audioDuration)}</div>
+                            </div>
+                        </div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                
+                // Agregar evento de reproducción después de agregar al DOM
+                setTimeout(() => {
+                    const playButton = messageDiv.querySelector('.audio-play-button');
+                    if (playButton) {
+                        playButton.addEventListener('click', async () => {
+                            const audioBase64 = playButton.getAttribute('data-audio-base64');
+                            try {
+                                playButton.textContent = '⏸️';
+                                await audioReceiver.playAudio(audioBase64);
+                                playButton.textContent = '▶️';
+                            } catch (error) {
+                                console.error('Error al reproducir audio:', error);
+                                playButton.textContent = '▶️';
+                                alert('Error al reproducir audio');
+                            }
+                        });
+                    }
+                }, 0);
+                
+            } else {
+                // Renderizar mensaje de texto normal
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        ${!isOwn ? `<div class="message-sender">${this.escapeHtml(msg.senderName)}</div>` : ''}
+                        <div class="message-text">${this.escapeHtml(msg.content)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            }
 
             this.elements.messageList.appendChild(messageDiv);
         });
@@ -160,7 +211,25 @@ export class ChatUIController {
         if (activeChat) {
             const isGroup = activeChat.chatType === compunet.ChatType.GROUP;
             const icon = isGroup ? '👥' : '👤';
-            this.elements.chatHeader.innerHTML = `${icon} ${this.escapeHtml(activeChat.chatName)}`;
+            
+            // Botón de llamada
+            const callButton = isGroup 
+                ? `<button id="group-call-button" class="call-button" title="Llamada grupal">📞</button>`
+                : `<button id="voice-call-button" class="call-button" title="Llamar">📞</button>`;
+            
+            this.elements.chatHeader.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <span>${icon} ${this.escapeHtml(activeChat.chatName)}</span>
+                    ${callButton}
+                </div>
+            `;
+            
+            // Agregar event listener al botón de llamada
+            if (isGroup) {
+                document.getElementById('group-call-button')?.addEventListener('click', () => this.handleGroupCall());
+            } else {
+                document.getElementById('voice-call-button')?.addEventListener('click', () => this.handleVoiceCall());
+            }
         } else {
             this.elements.chatHeader.innerHTML = 'Selecciona un chat';
         }
@@ -213,6 +282,52 @@ export class ChatUIController {
         } catch (error) {
             console.error('Error al enviar mensaje:', error);
             alert('Error al enviar mensaje: ' + error.message);
+        }
+    }
+
+    /**
+     * Maneja la grabación de audio
+     */
+    async handleRecordAudio() {
+        const activeChat = chatState.getActiveChat();
+        if (!activeChat) {
+            alert('Selecciona un chat para enviar audio');
+            return;
+        }
+
+        try {
+            if (!audioRecorder.isRecording()) {
+                // Iniciar grabación
+                await audioRecorder.startRecording();
+                this.elements.recordButton.classList.add('recording');
+                this.elements.recordButton.textContent = '⏹️';
+                this.elements.recordButton.title = 'Detener grabación';
+                
+            } else {
+                // Detener grabación y enviar
+                this.elements.recordButton.classList.remove('recording');
+                this.elements.recordButton.textContent = '🎤';
+                this.elements.recordButton.title = 'Grabar audio';
+                this.elements.recordButton.disabled = true;
+                
+                const { audioBase64, duration } = await audioRecorder.stopRecording();
+                
+                // Enviar audio
+                await audioSender.sendAudio(audioBase64, duration);
+                
+                // Recargar mensajes
+                await messageReceiver.refreshAll();
+                
+                this.elements.recordButton.disabled = false;
+            }
+            
+        } catch (error) {
+            console.error('Error con la grabación de audio:', error);
+            this.elements.recordButton.classList.remove('recording');
+            this.elements.recordButton.textContent = '🎤';
+            this.elements.recordButton.title = 'Grabar audio';
+            this.elements.recordButton.disabled = false;
+            alert('Error con el audio: ' + error.message);
         }
     }
 
@@ -302,6 +417,206 @@ export class ChatUIController {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // ========== Métodos de llamadas de voz ==========
+    
+    /**
+     * Maneja iniciar llamada de voz directa
+     */
+    async handleVoiceCall() {
+        const activeChat = chatState.getActiveChat();
+        if (!activeChat || activeChat.chatType === compunet.ChatType.GROUP) return;
+        
+        try {
+            // Mostrar modal de llamada
+            this.showCallModal(activeChat.chatName, 'Llamando...');
+            
+            // Iniciar llamada
+            const callId = await window.callManager.startDirectCall(activeChat.chatId);
+            
+            console.log('Llamada iniciada:', callId);
+            
+        } catch (error) {
+            console.error('Error iniciando llamada:', error);
+            this.hideCallModal();
+            alert('Error al iniciar llamada: ' + error.message);
+        }
+    }
+    
+    /**
+     * Maneja iniciar llamada grupal
+     */
+    async handleGroupCall() {
+        const activeChat = chatState.getActiveChat();
+        if (!activeChat || activeChat.chatType !== compunet.ChatType.GROUP) return;
+        
+        try {
+            // Iniciar llamada grupal
+            const callId = await window.groupCallManager.startGroupCall(activeChat.chatId);
+            
+            console.log('Llamada grupal iniciada:', callId);
+            
+        } catch (error) {
+            console.error('Error iniciando llamada grupal:', error);
+            alert('Error al iniciar llamada grupal: ' + error.message);
+        }
+    }
+    
+    /**
+     * Muestra modal de llamada directa
+     */
+    showCallModal(contactName, status) {
+        let modal = document.getElementById('call-modal');
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'call-modal';
+            modal.className = 'call-modal';
+            modal.innerHTML = `
+                <div class="call-modal-content">
+                    <div class="call-icon">📞</div>
+                    <h2 id="call-contact-name">${this.escapeHtml(contactName)}</h2>
+                    <p id="call-status">${status}</p>
+                    <audio id="remoteAudio" autoplay></audio>
+                    <button id="end-call-button" class="end-call-button">Colgar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('end-call-button').addEventListener('click', () => {
+                window.callManager.endCall();
+            });
+        } else {
+            document.getElementById('call-contact-name').textContent = contactName;
+            document.getElementById('call-status').textContent = status;
+            modal.style.display = 'flex';
+        }
+    }
+    
+    /**
+     * Oculta modal de llamada
+     */
+    hideCallModal() {
+        const modal = document.getElementById('call-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Actualiza estado de llamada
+     */
+    updateCallStatus(status) {
+        const statusElement = document.getElementById('call-status');
+        if (statusElement) {
+            statusElement.textContent = status;
+        }
+    }
+    
+    /**
+     * Muestra notificación de llamada entrante
+     */
+    showIncomingCallNotification(call, callManager) {
+        let notification = document.getElementById('incoming-call-notification');
+        
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'incoming-call-notification';
+            notification.className = 'incoming-call-notification';
+            notification.innerHTML = `
+                <div class="incoming-call-content">
+                    <div class="call-icon">📞</div>
+                    <h3 id="incoming-caller-name">Llamada entrante</h3>
+                    <p id="incoming-caller-subtitle">de ${this.escapeHtml(call.callerName)}</p>
+                    <div class="incoming-call-buttons">
+                        <button id="answer-call-button" class="answer-button">Contestar</button>
+                        <button id="reject-call-button" class="reject-button">Rechazar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+        } else {
+            document.getElementById('incoming-caller-subtitle').textContent = `de ${call.callerName}`;
+            notification.style.display = 'flex';
+        }
+        
+        // Event listeners
+        document.getElementById('answer-call-button').onclick = async () => {
+            notification.style.display = 'none';
+            this.showCallModal(call.callerName, 'Conectando...');
+            await callManager.answerDirectCall(call.callId);
+        };
+        
+        document.getElementById('reject-call-button').onclick = async () => {
+            notification.style.display = 'none';
+            await callManager.rejectCall(call.callId);
+        };
+    }
+    
+    /**
+     * Muestra modal de llamada grupal
+     */
+    showGroupCallModal(callId, groupCallManager) {
+        let modal = document.getElementById('group-call-modal');
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'group-call-modal';
+            modal.className = 'call-modal';
+            modal.innerHTML = `
+                <div class="call-modal-content">
+                    <div class="call-icon">📞</div>
+                    <h2>Llamada Grupal</h2>
+                    <p id="group-call-participants">Participantes: 1</p>
+                    <div id="group-call-audios"></div>
+                    <button id="leave-group-call-button" class="end-call-button">Salir</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('leave-group-call-button').addEventListener('click', () => {
+                groupCallManager.leaveGroupCall();
+            });
+        } else {
+            modal.style.display = 'flex';
+        }
+    }
+    
+    /**
+     * Oculta modal de llamada grupal
+     */
+    hideGroupCallModal() {
+        const modal = document.getElementById('group-call-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Muestra notificación simple
+     */
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'simple-notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #00a884;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 }
 
